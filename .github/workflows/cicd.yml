@@ -1,0 +1,58 @@
+name: CI/CD for Dockerized Flask APP ## name of the workflow
+
+on: ## events that trigger the workflow like push or pull request
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  build-and-test: ## job name and they are use of building and doing unit testing
+    runs-on: ubuntu-latest ### using the latest version of ubuntu
+
+    steps:
+      - name: Checkout code ## step name and it is used to checkout the code from the repository
+        uses: actions/checkout@v3
+
+      - name: Set up Python ## step name and it is used to set up the python environment
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.9" ## specify the python version to use
+
+      - name: Install dependencies ## step name and it is used to install the dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install pytest
+          pip install Flask
+
+      - name: Run tests ## step name and it is used to run the tests
+        run: |
+          pytest
+
+  build-and-publish:
+    needs: build-and-test ## this job depends on the previous job
+    runs-on: ubuntu-latest ## using the latest version of ubuntu
+
+    steps:
+      - name: Checkout code ## step name and it is used to checkout the code from the repository
+        uses: actions/checkout@v3
+
+      - name: Set up Docker Buildx ## step name and it is used to set up the Docker Buildx
+        uses: docker/setup-buildx-action@v2
+
+      - name: Login to Docker Hub
+        uses: docker/login-action@v2
+        with:
+          username: 7506604244 ## Docker Hub username from secrets
+          password: deepu@86v ## Docker Hub password from secrets
+
+      - name: Build and push Docker image ## step name and it is used to build and push the Docker image
+        uses: docker/build-push-action@v4
+        with:
+          context: .
+          push: true
+          tags: 7506604244/flask-app:latest ## replace with your Docker Hub username and image name
+
+      - name: Image digest
+        run: echo ${{ steps.docker_build.outputs.digest }} ## step name and it is used to logout from Docker Hub
